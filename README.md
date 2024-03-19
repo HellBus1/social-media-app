@@ -7,6 +7,9 @@
 1. Run ```go mod tidy``` to install & remote unecessary dependencies
 2. Run ```go run main.go``` the server will be start in port :8000 (you can test by call /health-check)
 
+## Configuration .env file
+1. Create .env file in root project from copy .env.example and fill the value based on your environment (development, staging, production)
+
 ## Migration guide
 1. Add migration script
 ```
