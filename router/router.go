@@ -2,6 +2,7 @@ package router
 
 import (
 	"social-media-app/controllers"
+	"social-media-app/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +14,11 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 		c.Set("DB", DB)
 		c.Next()
 	})
+
+	postRouter := router.Group("v1/post")
+	{
+		postRouter.POST("/", middleware.PostValidator(), controllers.CreatePost)
+	}
 
 	router.GET("/health-check", controllers.ServerCheck)
 
