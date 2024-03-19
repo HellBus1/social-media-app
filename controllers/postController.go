@@ -34,5 +34,5 @@ func CreatePost(ginContext *gin.Context) {
 		return
 	}
 
-	ginContext.JSON(http.StatusAccepted, gin.H{"data": post})
+	ginContext.JSON(http.StatusAccepted, gin.H{"message": "successfully add post", "data": post})
 }
