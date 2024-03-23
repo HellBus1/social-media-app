@@ -29,21 +29,19 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 
 	userAccount := router.Group("/v1/user")
 	{
-		// 	updateAccount.POST("/register", controllers.UserRegister)
-		// 	updateAccount.POST("/login", controllers.UserLogin)
+		// userAccount.POST("/register", controllers.UserRegister)
+		userAccount.POST("/login", middleware.AuthValidator(), controllers.UserLogin)
 		userAccount.PATCH("/", middleware.UpdateAccountValidator(), controllers.UpdateAccountController)
+		
+		// Linking email and phone number User
+		userAccount.POST("/link", middleware.Authentication(), middleware.LinkEmailValidator(), controllers.LinkEmail)
+		userAccount.POST("/link/phone", middleware.Authentication(), middleware.LinkPhoneValidator(), controllers.LinkPhone)
 	}
   
 	postRouter := router.Group("v1/post")
 	{
 		postRouter.POST("/", middleware.PostValidator(), controllers.CreatePost)
 		postRouter.GET("/", controllers.GetPost)
-	}
-
-	userRouter := router.Group("v1/user")
-	{
-		userRouter.POST("/link", middleware.LinkEmailValidator(), controllers.LinkEmail)
-		userRouter.POST("/link/phone", middleware.LinkPhoneValidator(), controllers.LinkPhone)
 	}
 
 	router.GET("/seed-test", controllers.CreateSeed)
