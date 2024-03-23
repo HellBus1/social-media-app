@@ -43,3 +43,19 @@ func ValidateUser(user *Users) error {
 	validate := validator.New()
 	return validate.Struct(user)
 }
+
+type LinkEmailRequest struct {
+	Email string `json:"email" binding:"required,email" validate:"required,email"`
+}
+
+type LinkEmailResponse struct {
+	Email string `json:"email"`
+}
+
+type LinkPhoneRequest struct {
+	Phone string `json:"phone" binding:"required,min=7,max=13,e164" validate:"required,min=7,max=13,e164"`
+}
+
+type LinkPhoneResponse struct {
+	Phone string `json:"phone"`
+}
