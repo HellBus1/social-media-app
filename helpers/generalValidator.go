@@ -21,14 +21,17 @@ func GeneralValidator(payloadValidationError error) []string {
 			for _, fieldErr := range err {
 				var message string
 				switch fieldErr.Tag() {
-				case "required":
-					message = fmt.Sprintf("%s is required", fieldErr.Field())
-				case "min":
-					message = fmt.Sprintf("%s must be at least %s characters long", fieldErr.Field(), fieldErr.Param())
-				case "max":
-					message = fmt.Sprintf("%s must be at most %s characters long", fieldErr.Field(), fieldErr.Param())
+					case "required":
+						message = fmt.Sprintf("%s is required", fieldErr.Field())
+					case "min":
+						message = fmt.Sprintf("%s must be at least %s characters long", fieldErr.Field(), fieldErr.Param())
+					case "max":
+						message = fmt.Sprintf("%s must be at most %s characters long", fieldErr.Field(), fieldErr.Param())
+					case "email":
+						message = fmt.Sprintf("%s must be a valid email address", fieldErr.Field())
+					case "e164":
+						message = fmt.Sprintf("%s must be a valid phone number", fieldErr.Field())
 				}
-		
 				errors = append(errors, message)
 			}
 		default:
