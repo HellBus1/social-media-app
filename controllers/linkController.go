@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	jwt5 "github.com/golang-jwt/jwt/v5"
 )
 
 func LinkEmail(ginContext *gin.Context) {
@@ -23,10 +24,8 @@ func LinkEmail(ginContext *gin.Context) {
 		return
 	}
 
-	// TODO: handle with auth middleware
-	// userData := ginContext.MustGet("userData").(jwt5.MapClaims)
-	// userID := int(userData["id"].(float64))
-	userID := 1
+	userData := ginContext.MustGet("userData").(jwt5.MapClaims)
+	userID := int(userData["id"].(float64))
 
 	email, err := services.LinkEmail(DB, Request, userID)
 	if err != nil {
@@ -50,10 +49,8 @@ func LinkPhone(ginContext *gin.Context) {
 		return
 	}
 
-	// TODO: handle with auth middleware
-	// userData := ginContext.MustGet("userData").(jwt5.MapClaims)
-	// userID := int(userData["id"].(float64))
-	userID := 1
+	userData := ginContext.MustGet("userData").(jwt5.MapClaims)
+	userID := int(userData["id"].(float64))
 
 	phone, err := services.LinkPhone(DB, Request, userID)
 	if err != nil {
