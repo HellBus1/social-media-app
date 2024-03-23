@@ -27,8 +27,9 @@ func GeneralValidator(payloadValidationError error) []string {
 					message = fmt.Sprintf("%s must be at least %s characters long", fieldErr.Field(), fieldErr.Param())
 				case "max":
 					message = fmt.Sprintf("%s must be at most %s characters long", fieldErr.Field(), fieldErr.Param())
+				case "url":
+					message = fmt.Sprintf("%s must be a valid URL", fieldErr.Field())
 				}
-		
 				errors = append(errors, message)
 			}
 		default:

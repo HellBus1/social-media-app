@@ -2,6 +2,7 @@ package router
 
 import (
 	"social-media-app/controllers"
+	"social-media-app/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,6 +15,24 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 		c.Next()
 	})
 
+	commentRouter := router.Group("/v1/post/comment")
+	{
+		commentRouter.POST("/", middleware.CommentValidator(), controllers.CreateComment)
+	}
+
+	friendRouter := router.Group("/v1/friend")
+	{
+		friendRouter.POST("/", middleware.FriendValidator(), controllers.CreateFriend)
+		friendRouter.GET("/", controllers.GetListOfFriend)
+		friendRouter.DELETE("/", middleware.FriendValidator(), controllers.RemoveFriend)
+	}
+
+	userAccount := router.Group("/v1/user")
+	{
+		// 	updateAccount.POST("/register", controllers.UserRegister)
+		// 	updateAccount.POST("/login", controllers.UserLogin)
+		userAccount.PATCH("/", middleware.UpdateAccountValidator(), controllers.UpdateAccountController)
+	}
 	router.GET("/health-check", controllers.ServerCheck)
 
 	return router
