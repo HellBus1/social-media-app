@@ -7,17 +7,18 @@ import (
 )
 
 type Users struct {
-	UserID    int       `json:"user_id"`
-	Username  string    `json:"username" binding:"min=5,max=15" validate:"min=5,max=15"`
+	ID        int       `json:"user_id"`
+	Name      string    `json:"username" binding:"min=5,max=15" validate:"min=5,max=15"`
 	Password  string    `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Fullname  string    `json:"name" binding:"min=5,max=50" validate:"min=5,max=50"`
+	Email     string    `json:"name" binding:"min=5,max=50" validate:"min=5,max=50"`
+	// Phone     string    `json:"name" binding:"min=5,max=50" validate:"min=5,max=50"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type UserRequest struct {
-	Username  string    `json:"username" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Password  string    `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
+	Name     string `json:"name" binding:"min=5,max=15" validate:"min=5,max=15"`
+	Password string `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
 }
 
 // HashPassword hashes the password before creating the user

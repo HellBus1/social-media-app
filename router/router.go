@@ -15,6 +15,25 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 		c.Next()
 	})
 
+	commentRouter := router.Group("/v1/post/comment")
+	{
+		commentRouter.POST("/", middleware.CommentValidator(), controllers.CreateComment)
+	}
+
+	friendRouter := router.Group("/v1/friend")
+	{
+		friendRouter.POST("/", middleware.FriendValidator(), controllers.CreateFriend)
+		friendRouter.GET("/", controllers.GetListOfFriend)
+		friendRouter.DELETE("/", middleware.FriendValidator(), controllers.RemoveFriend)
+	}
+
+	userAccount := router.Group("/v1/user")
+	{
+		// 	updateAccount.POST("/register", controllers.UserRegister)
+		// 	updateAccount.POST("/login", controllers.UserLogin)
+		userAccount.PATCH("/", middleware.UpdateAccountValidator(), controllers.UpdateAccountController)
+	}
+  
 	postRouter := router.Group("v1/post")
 	{
 		postRouter.POST("/", middleware.PostValidator(), controllers.CreatePost)
