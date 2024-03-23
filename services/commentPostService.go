@@ -3,19 +3,20 @@ package services
 import (
 	"context"
 	"log"
-	"social-media-app/models/post"
+	"social-media-app/models/comment"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetCommentByPostId(DB *pgxpool.Pool, postId int) (*[]post.PostCommentResponse, error) {
+func CreateCommentService(DB *pgxpool.Pool, Request comment.CommentRequest, commentatorId int) error {
 	ctx := context.Background()
 
 	tx, err := DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Println("Failed to begin transaction:", err)
-		return nil, err
+		return err
 	}
 
 	defer func() {
@@ -32,46 +33,19 @@ func GetCommentByPostId(DB *pgxpool.Pool, postId int) (*[]post.PostCommentRespon
 		}
 	}()
 
-	var comments []post.PostCommentResponse
-	rows, err := DB.Query(ctx, `
-			SELECT c.comment, u.id, u.name, u.image_url, COUNT(f.friend_id) AS friend_count, c.created_at 
-			FROM comments c
-			INNER JOIN users u ON c.commentator_id = u.id
-			LEFT JOIN friendship f ON u.id = f.user_id
-			WHERE c.post_id = $1
-			GROUP BY c.comment, u.id, u.name, u.image_url, c.created_at
-			ORDER BY c.created_at
-	`, postId)
+	// var id int
+
+	// Prepare statement within the transaction
+	_, err = tx.Exec(ctx, "INSERT INTO comments (commentator_id, post_id, comment, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)", commentatorId, Request.PostID, Request.Comment, time.Now(), time.Now())
 	if err != nil {
-		log.Println("Failed to query comments:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var comment string
-		var creator post.PostCreatorResponse
-		err := rows.Scan(&comment, &creator.UserId, &creator.Name, &creator.ImageUrl, &creator.FriendCount, &creator.CreatedAt)
-		if err != nil {
-			log.Println("Failed to scan row:", err)
-			continue
-		}
-
-		comments = append(comments, post.PostCommentResponse{
-			Comment: comment,
-			Creator: creator,
-		})
+		log.Println("Error executing insert statement:", err)
+		return err
 	}
 
-	if err := rows.Err(); err != nil {
-		log.Println("Error while iterating rows:", err)
-		return nil, err
-	}
-
+	// Commit the transaction
 	if err = tx.Commit(ctx); err != nil {
 		log.Println("Failed to commit transaction:", err)
-		return nil, err
+		return err
 	}
-
-	return &comments, nil
+	return nil
 }
