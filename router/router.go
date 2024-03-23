@@ -33,6 +33,15 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 		// 	updateAccount.POST("/login", controllers.UserLogin)
 		userAccount.PATCH("/", middleware.UpdateAccountValidator(), controllers.UpdateAccountController)
 	}
+  
+	postRouter := router.Group("v1/post")
+	{
+		postRouter.POST("/", middleware.PostValidator(), controllers.CreatePost)
+		postRouter.GET("/", controllers.GetPost)
+	}
+
+	router.GET("/seed-test", controllers.CreateSeed)
+
 	router.GET("/health-check", controllers.ServerCheck)
 
 	return router

@@ -56,5 +56,20 @@ func GetDBConfig() *pgxpool.Config {
 	databaseConfig.HealthCheckPeriod = defaultHealthCheck
 	databaseConfig.ConnConfig.ConnectTimeout = defaultConnectTimeout
 
+	// Set up connection pool event hooks
+	databaseConfig.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
+		log.Println("Before acquiring the connection pool to the database!!")
+		return true
+	}
+
+	databaseConfig.AfterRelease = func(c *pgx.Conn) bool {
+		log.Println("After releasing the connection pool to the database!!")
+		return true
+	}
+
+	databaseConfig.BeforeClose = func(c *pgx.Conn) {
+		log.Println("Closed the connection pool to the database!!")
+	}
+
 	return databaseConfig
 }
