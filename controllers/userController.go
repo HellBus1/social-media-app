@@ -8,7 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,7 +20,7 @@ func UserRegister(ctx *gin.Context) {
 	}
 	fmt.Println(DB)//
 
-	user, ok := ctx.MustGet("request").(models.Users)
+	user, ok := ctx.MustGet("request").(models.UsersForAuth)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get Request from context"})
 		return
@@ -74,13 +74,22 @@ func UserRegister(ctx *gin.Context) {
 		return
 	}
 
+	var email string
+	var phone string
+	if user.Email.Valid {
+		email = user.Email.String
+	}
+	if user.Phone.Valid {
+		phone = user.Phone.String
+	}
+
 	// Generate JWT token
 	var username string
 	switch user.CredentialType {
 	case "email":
-		username = user.Email
+		username = email
 	case "phone":
-		username = user.Phone
+		username = phone
 	}
 	token, err := helpers.GenerateToken(user.ID, username)
 	if err != nil {
@@ -117,7 +126,8 @@ func UserRegister(ctx *gin.Context) {
 }
 
 func UserLogin(ctx *gin.Context) {
-	var user models.Users
+	// var user models.Users
+	var user models.UsersForAuth
 
 	DB, ok := ctx.MustGet("DB").(*pgxpool.Pool)
 	if !ok {
@@ -149,15 +159,10 @@ func UserLogin(ctx *gin.Context) {
 	row := DB.QueryRow(ctx, query, Request.CredentialValue)
 	err := row.Scan(&user.ID, &user.Name, &user.Password, &user.Email, &user.Phone, &user.ImageURL, &user.CredentialType, &user.CreatedAt, &user.UpdatedAt)
 
-	if err == pgx.ErrNoRows {
-		fmt.Println("267")//
-		fmt.Println(err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
-		return
-	} else if err != nil {
+	if err != nil {
 		fmt.Println("272")//
 		fmt.Println(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "message": "Server error occurred"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
 		return
 	}
 
@@ -168,12 +173,21 @@ func UserLogin(ctx *gin.Context) {
 		return
 	}
 
+	var email string
+	var phone string
+	if user.Email.Valid {
+		email = user.Email.String
+	}
+	if user.Phone.Valid {
+		phone = user.Phone.String
+	}
+
 	var username string
 	switch user.CredentialType {
 	case "email":
-		username = user.Email
+		username = email
 	case "phone":
-		username = user.Phone
+		username = phone
 	}
 
 	// Generate JWT token
@@ -187,21 +201,18 @@ func UserLogin(ctx *gin.Context) {
 	responseData := gin.H{
 		"message": "User logged successfully",
 		"data": gin.H{
-			"email": func() string {
-				if user.Email == "" {
-					return ""
-				}
-				return user.Email
-			}(),
-			"phone": func() string {
-				if user.Phone == "" {
-					return ""
-				}
-				return user.Phone
-			}(),			
+			"email": email,
+			"phone": phone,
 			"name": user.Name,
 			"accessToken": token,
 		},
+	}
+	// If the email or phone value is null, change it to an empty string
+	if !user.Email.Valid {
+		responseData["data"].(gin.H)["email"] = ""
+	}
+	if !user.Phone.Valid {
+		responseData["data"].(gin.H)["phone"] = ""
 	}
 
 	ctx.JSON(http.StatusOK, responseData)
