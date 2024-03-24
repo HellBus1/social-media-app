@@ -32,7 +32,6 @@ func GeneralValidator(payloadValidationError error) []string {
 					case "e164":
 						message = fmt.Sprintf("%s must be a valid phone number", fieldErr.Field())
 				}
-		
 				errors = append(errors, message)
 			}
 		default:

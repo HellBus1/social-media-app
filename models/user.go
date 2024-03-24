@@ -7,17 +7,24 @@ import (
 )
 
 type Users struct {
-	UserID    int       `json:"user_id"`
-	Username  string    `json:"username" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Password  string    `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Fullname  string    `json:"name" binding:"min=5,max=50" validate:"min=5,max=50"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name" binding:"required,min=5,max=50" validate:"required,min=5,max=50"`
+	Password string `json:"password" binding:"required,min=5,max=15" validate:"required,min=5,max=15"`
+
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value
+
+	ImageURL  string    `json:"image_url"`
+	CredentialType string `json:"credentialType" binding:"required" validate:"required"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type UserRequest struct {
-	Username  string    `json:"username" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Password  string    `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
+	CredentialType string `json:"credentialType" binding:"required" validate:"required"`
+	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value
+	Password string `json:"password" binding:"required,min=5,max=15" validate:"required,min=5,max=15"`
 }
 
 // HashPassword hashes the password before creating the user

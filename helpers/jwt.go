@@ -14,10 +14,9 @@ var secretKey = os.Getenv("JWT_SECRET")
 
 func GenerateToken(id int, username string) (string, error) {
 	claims := jwt.MapClaims{
-		"id":       id,
+		"id": id,
 		"username": username,
-		"exp":      time.Now().Add(time.Minute * 10), // expire in 10 minutes
-		// "exp":   time.Now().Add(time.Minute * 2), // expire in 2 minutes for testing in weekend
+		"exp": time.Now().Add(time.Hour * 8), // expire in 8 hours
 	}
 
 	parseToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

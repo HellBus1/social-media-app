@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	jwt5 "github.com/golang-jwt/jwt/v5"
 )
 
 func LinkEmail(ginContext *gin.Context) {
@@ -23,7 +24,7 @@ func LinkEmail(ginContext *gin.Context) {
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get Request from context"})
 		return
 	}
-
+  
 	// Must unique email(don't allow duplicate email)
 	query := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
 	row := DB.QueryRow(ginContext, query, Request.Email)
