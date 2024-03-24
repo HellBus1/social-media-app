@@ -40,8 +40,8 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
   
 	postRouter := router.Group("v1/post")
 	{
-		postRouter.POST("/", middleware.PostValidator(), controllers.CreatePost)
-		postRouter.GET("/", controllers.GetPost)
+		postRouter.POST("/", middleware.AuthValidator(), middleware.PostValidator(), controllers.CreatePost)
+		postRouter.GET("/", middleware.AuthValidator(), controllers.GetPost)
 	}
 
 	router.GET("/seed-test", controllers.CreateSeed)

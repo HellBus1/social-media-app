@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	jwt5 "github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -24,10 +25,8 @@ func CreatePost(ginContext *gin.Context) {
 		return
 	}
 
-	// TODO: handle with auth middleware
-	// userData := ginContext.MustGet("userData").(jwt5.MapClaims)
-	// userID := int(userData["id"].(float64))
-	userID := 1
+	userData := ginContext.MustGet("userData").(jwt5.MapClaims)
+	userID := int(userData["id"].(float64))
 
 	post, err := services.CreatePost(DB, Request, userID)
 	if err != nil {
@@ -64,10 +63,9 @@ func GetPost(ginContext *gin.Context) {
 			calculatedOffset = 0
 	}
 
-	// TODO: handle with auth middleware
-	// userData := ginContext.MustGet("userData").(jwt5.MapClaims)
-	// userID := int(userData["id"].(float64))
-	userID := 1
+	userData := ginContext.MustGet("userData").(jwt5.MapClaims)
+	userID := int(userData["id"].(float64))
+	
 	posts, err := services.GetPostsByUserId(DB, userID, search, searchTags, limit, calculatedOffset)
 	if err != nil {
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get posts %s", err)})
