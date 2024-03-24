@@ -8,7 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -159,15 +159,10 @@ func UserLogin(ctx *gin.Context) {
 	row := DB.QueryRow(ctx, query, Request.CredentialValue)
 	err := row.Scan(&user.ID, &user.Name, &user.Password, &user.Email, &user.Phone, &user.ImageURL, &user.CredentialType, &user.CreatedAt, &user.UpdatedAt)
 
-	if err == pgx.ErrNoRows {
-		fmt.Println("267")//
-		fmt.Println(err)
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
-		return
-	} else if err != nil {
+	if err != nil {
 		fmt.Println("272")//
 		fmt.Println(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "message": "Server error occurred"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
 		return
 	}
 
