@@ -7,9 +7,11 @@ import (
 	"social-media-app/models/post"
 	"time"
 	"fmt"
+    "net/http"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/gin-gonic/gin"
 )
 
 func GetUserByIdWithFriendCount(DB *pgxpool.Pool, userID int) (*post.PostCreatorResponse, error) {
@@ -57,7 +59,7 @@ func GetUserByIdWithFriendCount(DB *pgxpool.Pool, userID int) (*post.PostCreator
 	return &user, nil
 }
 
-func LinkEmail(DB *pgxpool.Pool, userReq models.LinkEmailRequest, userID int) (*models.LinkEmailResponse, error) {
+func LinkEmail(DB *pgxpool.Pool, userReq models.LinkEmailRequest, userID int, cc *gin.Context) (*models.LinkEmailResponse, error) {
 	ctx := context.Background()
 
 	tx, err := DB.BeginTx(ctx, pgx.TxOptions{})
@@ -80,21 +82,28 @@ func LinkEmail(DB *pgxpool.Pool, userReq models.LinkEmailRequest, userID int) (*
 		}
 	}()
 
-	result, err := tx.Exec(ctx, "UPDATE users SET email=$1, updated_at=$2 WHERE id=$3", userReq.Email, time.Now(), userID)
+	// Check if email is already filled
+	var emailFilled bool
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND email IS NOT NULL)", userID).Scan(&emailFilled)
 	if err != nil {
-		fmt.Println("93")//
-		fmt.Println(err)
-		log.Println("Failed to update link email")
+		fmt.Println("Error checking if email is filled:", err)
+		return nil, err
+	}
+	if emailFilled {
+		// Email is already filled, return with an appropriate message
+		cc.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "message": "Email is already filled for this user"})
+
+		return nil, nil
+	}
+
+	// Proceed with the update if email is not filled
+	result, err := tx.Exec(ctx, "UPDATE users SET email=$1, updated_at=$2 WHERE id=$3 AND email IS NULL", userReq.Email, time.Now(), userID)
+	if err != nil {
+		fmt.Println("Failed to update link email:", err)
 		return nil, err
 	}
 	rowsAffected := result.RowsAffected()
-	if err != nil {
-		fmt.Println("100")
-		fmt.Println(err)
-		log.Println("Failed to get the number of affected rows")
-		return nil, err
-	}
-	log.Println("rowsAffected: ", rowsAffected)//
+	log.Println("Rows affected: ", rowsAffected)
 
 	if err = tx.Commit(ctx); err != nil {
 		log.Println("Failed to commit transaction:", err)
@@ -106,7 +115,7 @@ func LinkEmail(DB *pgxpool.Pool, userReq models.LinkEmailRequest, userID int) (*
 	}, nil
 }
 
-func LinkPhone(DB *pgxpool.Pool, userReq models.LinkPhoneRequest, userID int) (*models.LinkPhoneResponse, error) {
+func LinkPhone(DB *pgxpool.Pool, userReq models.LinkPhoneRequest, userID int, cc *gin.Context) (*models.LinkPhoneResponse, error) {
 	ctx := context.Background()
 
 	tx, err := DB.BeginTx(ctx, pgx.TxOptions{})
@@ -129,17 +138,28 @@ func LinkPhone(DB *pgxpool.Pool, userReq models.LinkPhoneRequest, userID int) (*
 		}
 	}()
 
-	result, err := tx.Exec(ctx, "UPDATE users SET phone=$1, updated_at=$2 WHERE id=$3", userReq.Phone, time.Now(), userID)
+	// Check if phone is already filled
+	var phoneFilled bool
+	err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1 AND phone IS NOT NULL)", userID).Scan(&phoneFilled)
 	if err != nil {
-		log.Println("Failed to update link phone")
+		fmt.Println("Error checking if phone is filled:", err)
+		return nil, err
+	}
+	if phoneFilled {
+		// Phone is already filled, return with an appropriate message
+		cc.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "message": "Phone is already filled for this user"})
+
+		return nil, nil
+	}
+
+	// Proceed with the update if phone is not filled
+	result, err := tx.Exec(ctx, "UPDATE users SET phone=$1, updated_at=$2 WHERE id=$3 AND phone IS NULL", userReq.Phone, time.Now(), userID)
+	if err != nil {
+		fmt.Println("Failed to update phone:", err)
 		return nil, err
 	}
 	rowsAffected := result.RowsAffected()
-	if err != nil {
-		log.Println("Failed to get the number of affected rows")
-		return nil, err
-	}
-	log.Println("rowsAffected: ", rowsAffected)//
+	log.Println("Rows affected: ", rowsAffected)
 
 	if err = tx.Commit(ctx); err != nil {
 		log.Println("Failed to commit transaction:", err)
