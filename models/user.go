@@ -8,12 +8,15 @@ import (
 
 type Users struct {
 	ID        int       `json:"id"`
-	Name      string    `json:"name" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Password  string    `json:"password" binding:"min=5,max=15" validate:"min=5,max=15"`
-	Email     string    `json:"email" binding:"min=5,max=50" validate:"min=5,max=50"`
-	Phone     string    `json:"phone" binding:"min=5,max=50" validate:"min=5,max=50"`
+	Name      string    `json:"name" binding:"required,min=5,max=50" validate:"required,min=5,max=50"`
+	Password string `json:"password" binding:"required,min=5,max=15" validate:"required,min=5,max=15"`
+
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value
+
 	ImageURL  string    `json:"image_url"`
-	CredentialType string `json:"credential_type" binding:"required" validate:"required"`
+	CredentialType string `json:"credentialType" binding:"required" validate:"required"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

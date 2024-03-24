@@ -29,7 +29,7 @@ func StartApp(DB *pgxpool.Pool) *gin.Engine {
 
 	userAccount := router.Group("/v1/user")
 	{
-		// userAccount.POST("/register", controllers.UserRegister)
+		userAccount.POST("/register", middleware.RegisterValidator(), controllers.UserRegister)
 		userAccount.POST("/login", middleware.AuthValidator(), controllers.UserLogin)
 		userAccount.PATCH("/", middleware.UpdateAccountValidator(), controllers.UpdateAccountController)
 		
