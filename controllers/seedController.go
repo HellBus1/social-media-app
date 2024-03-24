@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -95,7 +96,7 @@ func CreateSeed(ginContext *gin.Context) {
 			}
 			post := &Post{
 					UserID:     userID,
-					PostInHTML: "Sample post content",
+					PostInHTML: fmt.Sprintf("Sample post content %d", rand.Intn(100)),
 					CreatedAt:  time.Now().Add(-time.Duration(rand.Intn(100)) * time.Hour * 24), // Random past date
 			}
 			_, err := DB.Exec(context.Background(), `
@@ -107,11 +108,11 @@ func CreateSeed(ginContext *gin.Context) {
 			}
 
 			// Seed tags for each post
-			numTags := rand.Intn(3) + 1 // Random number of tags (1 to 3)
+			numTags := rand.Intn(5) + 1 // Random number of tags (1 to 3)
 			for j := 0; j < numTags; j++ {
 					tag := &Tag{
 							PostID:    i + 1,
-							Name:      "Tag" + strconv.Itoa(j+1),
+							Name:      "Tag" + strconv.Itoa(j+rand.Intn(10)),
 							CreatedAt: time.Now().Add(-time.Duration(rand.Intn(100)) * time.Hour * 24), // Random past date
 					}
 					_, err := DB.Exec(context.Background(), `
