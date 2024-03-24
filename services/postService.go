@@ -2,9 +2,11 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"social-media-app/models/post"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -66,8 +68,7 @@ func CreatePost(DB *pgxpool.Pool, postReq post.PostRequest, userID int) (*post.P
 	}, nil
 }
 
-func GetPostsByUserId(DB *pgxpool.Pool, userID int) (*[]post.PostPaginatedResponse, error) {
-	log.Println()
+func GetPostsByUserId(DB *pgxpool.Pool, userID int, search string, searchTags []string, limit int, offset int) (*[]post.PostPaginatedResponse, error) {
 	ctx := context.Background()
 
 	tx, err := DB.BeginTx(ctx, pgx.TxOptions{})
@@ -91,16 +92,39 @@ func GetPostsByUserId(DB *pgxpool.Pool, userID int) (*[]post.PostPaginatedRespon
 	}()
 
 	var posts []post.PostPaginatedResponse
-	rows, err := DB.Query(ctx, `
-					SELECT p.id, p.post_in_html, p.created_at,
-								 u.id, u.name, u.image_url, COUNT(f.friend_id) AS friend_count, p.created_at, p.updated_at
-					FROM posts p
-					INNER JOIN users u ON p.user_id = u.id
-					LEFT JOIN friendship f ON u.id = f.user_id
-					WHERE p.user_id = $1
-					GROUP BY p.id, u.id, u.name, u.image_url, u.created_at
-					ORDER BY p.created_at
-	`, userID)
+	var queryParams []interface{}
+	queryParams = append(queryParams, userID)
+	query := `
+		SELECT p.id, p.post_in_html, p.created_at,
+					u.id, u.name, u.image_url, COUNT(f.friend_id) AS friend_count, p.created_at, p.updated_at
+		FROM posts p
+		INNER JOIN users u ON p.user_id = u.id
+		LEFT JOIN friendship f ON u.id = f.user_id
+		WHERE p.user_id = $1
+	`
+	// Include search condition if search keyword is provided
+	if search != "" {
+			query += " AND (p.post_in_html LIKE '%' || " + search + " || '%')"
+	}
+
+	// Include search condition for tags
+	if len(searchTags) > 0 {
+    tagConditions := make([]string, len(searchTags))
+    for i, tag := range searchTags {
+        tagConditions[i] = fmt.Sprintf("pt.name LIKE '%%%s%%'", tag)
+    }
+    tagCondition := strings.Join(tagConditions, " OR ")
+    query += fmt.Sprintf(" AND p.id IN (SELECT pt.post_id FROM tags pt WHERE %s)", tagCondition)
+	}
+
+	query += `
+		GROUP BY p.id, u.id, u.name, u.image_url, u.created_at
+		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	queryParams = append(queryParams, limit, offset)
+
+	rows, err := DB.Query(ctx, query, queryParams...)
 	if err != nil {
 					log.Println("Failed to query posts:", err)
 					return nil, err

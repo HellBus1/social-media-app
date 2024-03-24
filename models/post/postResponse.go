@@ -10,6 +10,12 @@ type PostResponse struct {
 	UpdatedAt  *time.Time `json:"updatedAt"`
 }
 
+type Meta struct {
+	Limit 	int 	`json:"limit"`
+	Offset 	int 	`json:"offset"`
+	Total 	int 	`json:"total"`
+}
+
 type PostPaginatedResponse struct {
 	PostId   string                `json:"postId"`
 	Post     PostResponse          `json:"post"`

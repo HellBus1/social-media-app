@@ -1,13 +1,11 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -57,21 +55,6 @@ func GetDBConfig() *pgxpool.Config {
 	databaseConfig.MaxConnIdleTime = defaultMaxConnIdleTime
 	databaseConfig.HealthCheckPeriod = defaultHealthCheck
 	databaseConfig.ConnConfig.ConnectTimeout = defaultConnectTimeout
-
-	// Set up connection pool event hooks
-	databaseConfig.BeforeAcquire = func(ctx context.Context, c *pgx.Conn) bool {
-		log.Println("Before acquiring the connection pool to the database!!")
-		return true
-	}
-
-	databaseConfig.AfterRelease = func(c *pgx.Conn) bool {
-		log.Println("After releasing the connection pool to the database!!")
-		return true
-	}
-
-	databaseConfig.BeforeClose = func(c *pgx.Conn) {
-		log.Println("Closed the connection pool to the database!!")
-	}
 
 	return databaseConfig
 }
