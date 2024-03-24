@@ -1,46 +1,65 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"social-media-app/models/comment"
 	"social-media-app/services"
+
+	// "github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateComment(ctx *gin.Context) {
-	DB, ok := ctx.MustGet("DB").(*pgxpool.Pool)
-	if !ok {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get DB from context"})
-		return
-	}
-
-	// Bind request body to CommentRequest struct
-	request, _ := ctx.Get("request")
-    commentRequest, ok := request.(comment.CommentRequest)
+    DB, ok := ctx.MustGet("DB").(*pgxpool.Pool)
     if !ok {
+        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get DB from context"})
+        return
+    }
+
+    var commentRequest comment.CommentRequest
+    if err := ctx.ShouldBindJSON(&commentRequest); err != nil {
         ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
         return
     }
 
-	// Use middleware to achive this, but now use hard code
-	// commentatorData := ctx.MustGet("commentatorData").(jwt5.MapClaims)
-	// commentatorId := int(commentatorData["id"].(float64))
+    commentatorId := 5
 
-	commentatorId := 1
+    // Check if the post exists
+    var postExists bool
+    err := DB.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM Posts WHERE id = $1)", commentRequest.PostID).Scan(&postExists)
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "message": "Failed to check if post exists",
+        })
+        return
+    }
 
-	err := services.CreateCommentService(DB, commentRequest, commentatorId)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("Failed to create comment %s", err),
-		})
-		return
-	}
+    if !postExists {
+        ctx.JSON(http.StatusNotFound, gin.H{
+            "message": fmt.Sprintf("Post with ID %d not found", commentRequest.PostID),
+        })
+        return
+    }
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "successfully add post",
-		// "data":    commentData,
-	})
+    err = services.CreateCommentService(DB, commentRequest, commentatorId)
+    if err != nil {
+        if errors.Is(err, services.ErrNotFriends) {
+            ctx.JSON(http.StatusBadRequest, gin.H{
+                "message": "Commentator and post owner are not friends",
+            })
+            return
+        }
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "message": fmt.Sprintf("Failed to create comment: %s", err),
+        })
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{
+        "message": "Successfully added comment",
+    })
 }
