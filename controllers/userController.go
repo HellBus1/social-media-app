@@ -1,13 +1,14 @@
 package controllers
 
 import (
+	"database/sql"
+	"fmt"
 	"net/http"
 	"social-media-app/helpers"
 	"social-media-app/models"
-	"fmt"
-	"database/sql"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	// "github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -18,7 +19,6 @@ func UserRegister(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get DB from context"})
 		return
 	}
-	fmt.Println(DB)//
 
 	user, ok := ctx.MustGet("request").(models.UsersForAuth)
 	if !ok {
@@ -33,8 +33,29 @@ func UserRegister(ctx *gin.Context) {
 		return
 	}
 
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if user.CredentialType == "phone" {
+		phoneRequest := models.LinkPhoneRequest { Phone: user.CredentialValue }
+    if err := validate.Struct(phoneRequest); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("credentialValue not valid for phone %s", err),
+			})
+			return
+		}
+	}
+
+	if user.CredentialType == "email" {
+		emailRequest := models.LinkEmailRequest { Email: user.CredentialValue }
+		if err := validate.Struct(emailRequest); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("credentialValue not valid for email %s", err),
+			})
+			return
+		}
+	}
+
 	var query string
-	if (user.CredentialType == "phone") {
+	if user.CredentialType == "phone" {
 		query = "SELECT EXISTS (SELECT 1 FROM users WHERE phone = $1)"
 	} else {
 		query = "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
@@ -60,7 +81,7 @@ func UserRegister(ctx *gin.Context) {
 
 	// Save the user to the database
 	var query_register string
-	if (user.CredentialType == "phone") {
+	if user.CredentialType == "phone" {
 		query_register = "INSERT INTO users (name, password, phone, credential_type, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)"
 	} else {
 		query_register = "INSERT INTO users (name, password, email, credential_type, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)"
@@ -68,9 +89,9 @@ func UserRegister(ctx *gin.Context) {
 	_, err = DB.Exec(ctx, query_register, user.Name, user.Password, user.CredentialValue, user.CredentialType, user.CreatedAt, user.UpdatedAt)
 
 	if err != nil {
-		fmt.Println("109")//
+		fmt.Println("109") //
 		fmt.Println(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to register user %s", err)})
 		return
 	}
 
@@ -94,20 +115,20 @@ func UserRegister(ctx *gin.Context) {
 	token, err := helpers.GenerateToken(user.ID, username)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Internal Server Error",
+			"error":   "Internal Server Error",
 			"message": "Failed to generate token",
 		})
 		return
 	}
-	
+
 	// Construct response data
 	var responseData gin.H
-	if (user.CredentialType == "phone") {
+	if user.CredentialType == "phone" {
 		responseData = gin.H{
 			"message": "User registered successfully",
 			"data": gin.H{
-				"phone": user.CredentialValue,
-				"name": user.Name,
+				"phone":       user.CredentialValue,
+				"name":        user.Name,
 				"accessToken": token,
 			},
 		}
@@ -115,8 +136,8 @@ func UserRegister(ctx *gin.Context) {
 		responseData = gin.H{
 			"message": "User registered successfully",
 			"data": gin.H{
-				"email": user.CredentialValue,
-				"name": user.Name,
+				"email":       user.CredentialValue,
+				"name":        user.Name,
 				"accessToken": token,
 			},
 		}
@@ -131,8 +152,6 @@ func UserLogin(ctx *gin.Context) {
 
 	DB, ok := ctx.MustGet("DB").(*pgxpool.Pool)
 	if !ok {
-		fmt.Println("20")//
-		fmt.Println(ok)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get DB from context"})
 		return
 	}
@@ -150,17 +169,44 @@ func UserLogin(ctx *gin.Context) {
 		return
 	}
 
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if Request.CredentialType == "phone" {
+		phoneRequest := models.LinkPhoneRequest { Phone: Request.CredentialValue }
+    if err := validate.Struct(phoneRequest); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("credentialValue not valid for phone %s", err),
+			})
+			return
+		}
+	}
+
+	if Request.CredentialType == "email" {
+		emailRequest := models.LinkEmailRequest { Email: Request.CredentialValue }
+		if err := validate.Struct(emailRequest); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprintf("credentialValue not valid for email %s", err),
+			})
+			return
+		}
+	}
+
 	var query string
-	if (Request.CredentialType == "phone") {
+	var nullableImageUrl *string
+	if Request.CredentialType == "phone" {
 		query = "SELECT id, name, password, email, phone, image_url, credential_type, created_at, updated_at FROM users WHERE phone = $1"
 	} else {
 		query = "SELECT id, name, password, email, phone, image_url, credential_type, created_at, updated_at FROM users WHERE email = $1"
 	}
 	row := DB.QueryRow(ctx, query, Request.CredentialValue)
-	err := row.Scan(&user.ID, &user.Name, &user.Password, &user.Email, &user.Phone, &user.ImageURL, &user.CredentialType, &user.CreatedAt, &user.UpdatedAt)
+	err := row.Scan(&user.ID, &user.Name, &user.Password, &user.Email, &user.Phone, &nullableImageUrl, &user.CredentialType, &user.CreatedAt, &user.UpdatedAt)
+
+	user.ImageURL = ""
+	if nullableImageUrl != nil {
+		user.ImageURL = *nullableImageUrl
+	}
 
 	if err != nil {
-		fmt.Println("272")//
+		fmt.Println("272") //
 		fmt.Println(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
 		return
@@ -201,9 +247,9 @@ func UserLogin(ctx *gin.Context) {
 	responseData := gin.H{
 		"message": "User logged successfully",
 		"data": gin.H{
-			"email": email,
-			"phone": phone,
-			"name": user.Name,
+			"email":       email,
+			"phone":       phone,
+			"name":        user.Name,
 			"accessToken": token,
 		},
 	}

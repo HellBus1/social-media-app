@@ -12,8 +12,8 @@ type Users struct {
 	Name      string    `json:"name" binding:"required,min=5,max=50" validate:"required,min=5,max=50"`
 	Password string `json:"password" binding:"required,min=5,max=15" validate:"required,min=5,max=15"`
 
-	Email     string    `json:"email"`
-	Phone     string    `json:"phone"`
+	Email     string    `json:"email,omitempty"`
+	Phone     string    `json:"phone,omitempty"`
 	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value
 
 	ImageURL  string    `json:"image_url"`
