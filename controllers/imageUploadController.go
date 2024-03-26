@@ -22,7 +22,6 @@ func CreateUploadImage(ctx *gin.Context) {
 		return
 	}
 
-
 	files := form.File["file"]
 	if len(files) == 0 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
@@ -61,7 +60,12 @@ func CreateUploadImage(ctx *gin.Context) {
 	fileURL := "https://s3.amazonaws.com/" + os.Getenv("S3_BUCKET_NAME") + "/" + filename
 
 	// Respond with file URL
-	ctx.JSON(http.StatusOK, gin.H{"imageUrl": fileURL})
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "File uploaded sucessfully",
+		"data": gin.H{
+			"imageUrl": fileURL,
+		},
+	})
 }
 
 // Uploads file to AWS S3

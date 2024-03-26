@@ -1,16 +1,16 @@
 package middleware
 
 import (
+	"net/http"
 	"social-media-app/helpers"
 	"social-media-app/models"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterValidator() gin.HandlerFunc {
 	return func(context *gin.Context) {
-		var user models.Users
+		var user models.UsersForAuth
 
 		if payloadValidationError := context.ShouldBindJSON(&user); payloadValidationError != nil {
 			var errors []string
