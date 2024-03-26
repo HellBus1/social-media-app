@@ -25,11 +25,28 @@ func LinkEmail(ginContext *gin.Context) {
 		return
 	}
   
-	// Must unique email(don't allow duplicate email)
-	query := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
+	// Must unique email(don't allow duplicate email) | 400
+	query := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1 and credential_type = 'email')"
 	row := DB.QueryRow(ginContext, query, Request.Email)
 	var exists bool
 	err := row.Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if email exists"})
+		return
+	}
+	if err == sql.ErrNoRows {
+		exists = false
+	}
+	if exists {
+		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists"})
+		return
+	}
+
+	// Must unique email(don't allow duplicate email) | 409
+	query = "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
+	row = DB.QueryRow(ginContext, query, Request.Email)
+	// var exists bool
+	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if email exists"})
 		return
