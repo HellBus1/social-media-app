@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"social-media-app/models"
@@ -47,7 +48,7 @@ func LinkEmail(ginContext *gin.Context) {
 	// Must unique email(don't allow duplicate email) | 409
 	query = "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
 	row = DB.QueryRow(ginContext, query, Request.Email)
-	err = row.Scan(&exists)
+	err := row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if email exists"})
 		return
@@ -107,7 +108,7 @@ func LinkPhone(ginContext *gin.Context) {
 	// Must unique phone(don't allow duplicate phone) | 409
 	query = "SELECT EXISTS (SELECT 1 FROM users WHERE phone = $1)"
 	row = DB.QueryRow(ginContext, query, Request.Phone)
-	err = row.Scan(&exists)
+	err := row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if phone exists"})
 		return
