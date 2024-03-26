@@ -206,7 +206,7 @@ func UserLogin(ctx *gin.Context) {
 	}
 
 	if err != nil {
-		fmt.Println("272") //
+		fmt.Println("272")//
 		fmt.Println(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Not Found", "message": "User not found"})
 		return
@@ -247,9 +247,9 @@ func UserLogin(ctx *gin.Context) {
 	responseData := gin.H{
 		"message": "User logged successfully",
 		"data": gin.H{
-			"email":       email,
-			"phone":       phone,
-			"name":        user.Name,
+			"email": email,
+			"phone": phone,
+			"name": user.Name,
 			"accessToken": token,
 		},
 	}

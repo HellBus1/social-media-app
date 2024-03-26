@@ -37,6 +37,21 @@ type UsersForAuth struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type UsersForAuth struct {
+	ID        int       `json:"id"`
+	Name      string    `json:"name" binding:"required,min=5,max=50" validate:"required,min=5,max=50"`
+	Password string `json:"password" binding:"required,min=5,max=15" validate:"required,min=5,max=15"`
+
+	Email     sql.NullString    `json:"email"`
+	Phone     sql.NullString    `json:"phone"`
+	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value
+
+	ImageURL  string    `json:"image_url"`
+	CredentialType string `json:"credentialType" binding:"required" validate:"required"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type UserRequest struct {
 	CredentialType string `json:"credentialType" binding:"required" validate:"required"`
 	CredentialValue string `json:"credentialValue" binding:"required" validate:"required"` //TODO: not yet validation phone and email value

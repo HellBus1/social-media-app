@@ -32,14 +32,31 @@ func LinkEmail(ginContext *gin.Context) {
 		return
 	}
 
-	existsQuery := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
-	row := DB.QueryRow(ginContext, existsQuery, Request.Email)
+	// Must unique email(don't allow duplicate email) | 400
+	query := "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1 and credential_type = 'email')"
+	row := DB.QueryRow(ginContext, query, Request.Email)
 	var exists bool
 	if err := row.Scan(&exists); handleDBError(err, "Error checking if email exists") {
 		return
 	}
 	if exists {
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists"})
+		return
+	}
+
+	// Must unique email(don't allow duplicate email) | 409
+	query = "SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)"
+	row = DB.QueryRow(ginContext, query, Request.Email)
+	err = row.Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if email exists"})
+		return
+	}
+	if err == sql.ErrNoRows {
+		exists = false
+	}
+	if exists {
+		ginContext.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		return
 	}
 
@@ -75,14 +92,31 @@ func LinkPhone(ginContext *gin.Context) {
 		return
 	}
 
-	existsQuery := "SELECT EXISTS (SELECT 1 FROM users WHERE phone = $1)"
-	row := DB.QueryRow(ginContext, existsQuery, Request.Phone)
+	// Must unique phone(don't allow duplicate phone) | 400
+	query := "SELECT EXISTS (SELECT 1 FROM users WHERE phone = $1 and credential_type = 'phone')"
+	row := DB.QueryRow(ginContext, query, Request.Phone)
 	var exists bool
 	if err := row.Scan(&exists); handleDBError(err, "Error checking if phone exists") {
 		return
 	}
 	if exists {
 		ginContext.JSON(http.StatusBadRequest, gin.H{"error": "Phone already exists"})
+		return
+	}
+
+	// Must unique phone(don't allow duplicate phone) | 409
+	query = "SELECT EXISTS (SELECT 1 FROM users WHERE phone = $1)"
+	row = DB.QueryRow(ginContext, query, Request.Phone)
+	err = row.Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		ginContext.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking if phone exists"})
+		return
+	}
+	if err == sql.ErrNoRows {
+		exists = false
+	}
+	if exists {
+		ginContext.JSON(http.StatusConflict, gin.H{"error": "Phone already exists"})
 		return
 	}
 
